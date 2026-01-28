@@ -1,0 +1,181 @@
+# 📘 INSTRUCCIONES – SISTEMA DE TURNOS EN RED LOCAL (LAN) LEER CON ATENCIÓN!!!!
+
+## 1. Descripción general
+
+Este sistema implementa un **sistema de turnos en tiempo real** compuesto por tres vistas principales:
+
+* **Vista Kiosco**: donde el usuario solicita un turno e imprime su ticket.
+* **Vista Asesor (Admin)**: donde el asesor visualiza la cola y llama al siguiente turno.
+* **Vista Display**: pantalla pública que muestra el turno llamado con animación y sonido.
+
+Todos los componentes se comunican **en tiempo real** a través de una red **LAN**, sin necesidad de internet.
+
+---
+
+## 2. Equipos involucrados
+
+### 🧑‍💼 PC del Asesor (Servidor)
+
+* Sistema operativo: Windows 11
+* Función: servidor central del sistema
+
+### 🖥️ Todo en uno (Kiosco)
+
+* Sistema operativo: Windows 11
+* Función: interfaz para solicitar turnos e impresión de tickets
+* Conectado a impresora POS 58mm por USB
+* El zip llamado kiosco-printer es la carpeta que debe descomprimirse en el pc kiosco.
+
+### 📺 Pantalla Display
+
+* Puede ser:
+
+  * Un monitor conectado al PC del asesor
+  * O cualquier equipo en la red que abra la vista display
+
+---
+
+## 3. Software instalado
+
+### En el PC del Asesor
+
+* **Node.js**
+* Dependencias principales:
+
+  * `express`
+  * `socket.io`--- npm install express socket.io
+
+Este equipo ejecuta el **servidor central**, que:
+
+* Sirve las vistas web
+* Maneja la cola de turnos
+* Emite eventos en tiempo real
+
+---
+
+### En el Kiosco
+
+* **Node.js**
+* Dependencias principales:
+
+  * `express`--- npm install express
+  * `cors`--- npm install cors
+  * `pdfkit`--- npm install pdfkit
+  * `pdf-to-printer`--- npm install pdf-to-printer
+
+Este equipo ejecuta un **servidor local de impresión**, exclusivo para:
+
+* Generar tickets en PDF
+* Enviarlos a la impresora POS
+* Eliminar automáticamente los archivos para no ocupar espacio
+
+---
+
+## 4. Servicios en ejecución
+
+### PC del Asesor
+
+Se ejecuta:
+
+```bash
+node server.js
+```
+
+Este servicio:
+
+* Escucha en el puerto **3000**
+* Provee las siguientes rutas:
+
+  * `/kiosco` → vista del kiosco ( para acceder a la vista del kiosco se debe colocar la ruta en el navegador así: http://111.111.1.11:3000/kiosco, la dirección IP es la que tenga el conputador de asesor)
+  * `/admin` → vista del asesor
+  * `/display` → pantalla de turnos ( http://111.111.1.11:3000/display)
+
+* Maneja la comunicación en tiempo real con Socket.IO
+* Realiza un **reset automático diario de turnos a las 00:00**
+
+---
+
+### Kiosco
+
+Se ejecuta:
+
+```bash
+node printer-server.js
+```
+
+Este servicio:
+
+* Escucha en el puerto **4000**
+* No tiene interfaz visual
+* Recibe solicitudes POST para imprimir tickets
+* Permite solicitudes desde el servidor (CORS habilitado)
+
+---
+
+## 5. Funcionamiento del sistema (flujo)
+
+### 1️⃣ Solicitud de turno (Kiosco)
+
+* El usuario presiona el botón **“Pedir turno”**
+* El navegador del kiosco se conecta al servidor del asesor
+* El servidor genera un turno único (ej: T001)
+
+### 2️⃣ Impresión
+
+* El kiosco envía el turno al servidor local de impresión
+* Se genera un ticket corto (ahorro de papel)
+* El ticket se imprime y el PDF se elimina
+* Existe un bloqueo temporal para evitar doble impresión
+
+### 3️⃣ Cola de turnos
+
+* El turno se agrega a la cola
+* La vista del asesor y el display se actualizan en tiempo real
+
+### 4️⃣ Llamado del turno (Asesor)
+
+* El asesor presiona **“Llamar siguiente”**
+* El sistema retira el primer turno de la cola
+* Se emite el evento de turno llamado
+
+### 5️⃣ Pantalla pública (Display)
+
+* Muestra el turno llamado
+* Aplica una animación visual
+* Reproduce un sonido tipo “ding”
+* El sonido se habilita tras una interacción inicial (requisito del navegador)
+
+---
+
+## 6. Comunicación entre componentes
+
+* Toda la comunicación en tiempo real se realiza con **Socket.IO**
+* La red es **LAN**, no se utiliza internet
+* El kiosco accede al servidor mediante la IP del PC del asesor
+* El servidor del asesor **no imprime**
+* El kiosco **no gestiona la lógica de turnos**
+
+Separación clara de responsabilidades.
+
+---
+
+## 7. Consideraciones importantes
+
+* El aviso “No es seguro” del navegador es normal (HTTP en LAN)
+* Se recomienda usar Chrome en modo kiosco (o usar comando f11) para ocultar barras y avisos
+* El sistema es estable incluso si:
+        * Se reinicia un navegador
+        * Se recarga una vista
+        * Si se reinicia el servidor, la cola se reinicia
+
+---
+
+## 8. Estado del sistema
+
+✔ Sistema funcional
+✔ Impresión POS estable
+✔ Tiempo real
+✔ Anti doble impresión
+✔ Reset automático diario
+✔ Diseño optimizado para uso público
+

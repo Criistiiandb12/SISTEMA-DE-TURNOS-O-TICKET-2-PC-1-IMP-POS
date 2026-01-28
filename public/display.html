@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Turnos</title>
+
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      color: white;
+      font-family: Arial, Helvetica, sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    #actual {
+      font-size: 120px;
+      font-weight: bold;
+      color: #00ffcc;
+    }
+
+    #texto {
+      font-size: 32px;
+      margin-top: 20px;
+      opacity: 0.8;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(0.6); opacity: 0; }
+      60% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+
+    .animate {
+      animation: pop 0.4s ease-out;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="actual">—</div>
+  <div id="texto">Turno en atención</div>
+
+  <audio id="ding" src="/ding.mp3" preload="auto"></audio>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    const actual = document.getElementById("actual");
+    const ding = document.getElementById("ding");
+
+    socket.on("turno_llamado", (turno) => {
+      if (!turno) return;
+
+      actual.textContent = turno;
+      actual.classList.remove("animate");
+      void actual.offsetWidth; 
+      actual.classList.add("animate");
+
+      ding.currentTime = 0;
+      ding.play();
+    });
+  </script>
+<script>
+  document.addEventListener("click", () => {
+    const audio = document.getElementById("ding");
+    audio.play().then(() => {
+      audio.pause();
+      audio.currentTime = 0;
+      console.log("🔊 Audio habilitado");
+    }).catch(() => {});
+  }, { once: true });
+</script>
+
+</body>
+</html>
